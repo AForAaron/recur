@@ -271,14 +271,14 @@ button::after { border: none; }
     background-color: #e5e7eb;
   }
 
-  /* 注意：只选 .uni-tabbar（内层可见条），不选外层 <uni-tabbar>。
-   * 外层若加了 transform，会成为内层 position:fixed 的新包含块，
-   * 把内层锁死在文档底部而不是视口底部——tab bar 就消失了。 */
+  /* 桌面端把 tab bar 限制到与白底列同宽，居中显示。
+   * 用 calc() 居中，不用 transform——transform 会让 .uni-tabbar
+   * 成为自身 fixed 定位的 containing block 候选，某些浏览器实现下
+   * 会改变 bottom:0 的参考基准。 */
   .uni-tabbar {
     max-width: var(--recur-app-w);
-    left: 50% !important;
+    left: calc(50% - var(--recur-app-w) / 2) !important;
     right: auto !important;
-    transform: translateX(-50%);
   }
 }
 /* #endif */
