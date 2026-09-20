@@ -145,8 +145,9 @@ import {
   dailyCost,
   monthlyCost,
   cumulativePaid,
-  daysUntilNextBilling,
-  trialDaysRemaining,
+  daysToKeyDate,
+  keyDateKind,
+  keyDateLabel,
 } from "@/utils/billing";
 import { formatAmount } from "@/utils/format";
 import { monogram } from "@/utils/monogram";
@@ -245,20 +246,22 @@ function cycleTheme() {
 }
 
 // ====== 按紧急度分组 ======
-/** 一条订阅只落进第一个匹配的分组，保证不重复计数 */
+/**
+ * 一条订阅只落进第一个匹配的分组，保证不重复计数。
+ *
+ * 关键区别：自动续费临期是「要去付钱」，非自动续费临期是「要去做决定」。
+ * 后者必须进「需要处理」，否则会被误读成「马上要扣钱」。
+ */
 function groupKeyOf(sub: Subscription): "action" | "soon" | "later" {
-  // 需要处理：试用即将到期，或非自动续费已过期
-  if (sub.is_trial) {
-    if (trialDaysRemaining(sub) <= 7) return "action";
-  } else if (!sub.auto_renew && sub.status === "active") {
-    const d = daysUntilNextBilling(sub);
-    if (d !== null && d <= 0) return "action";
-  }
-  // 未来 7 天
-  const d = daysUntilNextBilling(sub);
-  if (d !== null && d >= 0 && d <= 7) return "soon";
-  // 试用但未临期
-  if (sub.is_trial) return "soon";
+  const d = daysToKeyDate(sub);
+  const isBilling = keyDateKind(sub) === "billing";
+
+  // 已过期：任何类型都需要处理
+  if (d !== null && d < 0) return "action";
+  // 到期 / 试用临期 7 天内：需要做决定
+  if (!isBilling && d !== null && d <= 7) return "action";
+  // 自动续费 7 天内：即将扣钱
+  if (isBilling && d !== null && d <= 7) return "soon";
   return "later";
 }
 
@@ -294,22 +297,16 @@ function metaLine(sub: Subscription): string {
   return `${cycleLabel(sub.cycle, sub.cycle_days)} · 日均 ¥${daily}`;
 }
 
+/** 倒计时文案。自动续费说「扣费」，非自动续费与试用说「到期」。 */
 function nextBillingLabel(sub: Subscription): string {
-  if (sub.is_trial) {
-    const left = trialDaysRemaining(sub);
-    return left === 0 ? "今日到期" : `${left} 天后到期`;
-  }
-  const d = daysUntilNextBilling(sub);
-  if (d === null) return "未设定";
-  if (d === 0) return "今日扣费";
-  if (d < 0) return `已过期 ${-d} 天`;
-  return `${d} 天后`;
+  return keyDateLabel(sub);
 }
 
 /** 倒计时按紧急度着色——列表扫下来，有颜色的就是要处理的 */
 function urgencyClass(sub: Subscription): string {
-  const d = sub.is_trial ? trialDaysRemaining(sub) : daysUntilNextBilling(sub);
+  const d = daysToKeyDate(sub);
   if (d === null) return "when-idle";
+  if (d < 0) return "when-urgent";     // 已过期
   if (d <= 3) return "when-urgent";
   if (d <= 7) return "when-soon";
   return "when-idle";
@@ -319,7 +316,7 @@ function cardAriaLabel(sub: Subscription): string {
   const parts = [sub.name, formatAmount(sub.amount, sub.currency)];
   if (sub.currency !== "CNY") parts.push(`约合 ${store.cny(sub.amount, sub.currency).toFixed(0)} 元`);
   parts.push(cycleLabel(sub.cycle, sub.cycle_days));
-  parts.push(nextBillingLabel(sub));
+  parts.push(keyDateLabel(sub));
   if (sub.is_trial) parts.push("试用中");
   else if (!sub.auto_renew && sub.status === "active") parts.push("非自动续费");
   return parts.join("，");

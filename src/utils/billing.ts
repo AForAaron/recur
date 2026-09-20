@@ -57,6 +57,59 @@ export function daysUntilNextBilling(sub: Subscription): number | null {
   return Math.max(0, daysBetween(todayStr(), sub.next_billing_date));
 }
 
+/* ============================================================
+ * 关键日期的语义
+ *
+ * next_billing_date 这个字段在不同情况下含义不同：
+ *   自动续费 → 「下次扣费日」，那天会真的扣钱
+ *   非自动续费 → 「到期日」，那天服务结束，需要你决定是否续
+ *   试用 → trial_end_date，那天试用结束
+ *
+ * 三者共用「关键日期」这个概念，但文案、分组、提醒都要分开，
+ * 否则会把「到期」误报成「扣费」。
+ * ============================================================ */
+
+export type KeyDateKind = "trial" | "billing" | "expiry";
+
+/** 这条订阅的关键日期属于哪一类 */
+export function keyDateKind(sub: Subscription): KeyDateKind {
+  if (sub.is_trial) return "trial";
+  return sub.auto_renew ? "billing" : "expiry";
+}
+
+/**
+ * 距关键日期的天数。**带符号**——负数表示已过。
+ * 不要用 Math.max 夹到 0，否则过期项会显示成"今天"。
+ */
+export function daysToKeyDate(sub: Subscription): number | null {
+  const d = sub.is_trial ? sub.trial_end_date : sub.next_billing_date;
+  if (!d) return null;
+  return daysBetween(todayStr(), d);
+}
+
+/** 关键日期是否已过 */
+export function isKeyDatePassed(sub: Subscription): boolean {
+  const d = daysToKeyDate(sub);
+  return d !== null && d < 0;
+}
+
+/** 关键日期的文案。自动续费说「扣费」，其余说「到期」。 */
+export function keyDateLabel(sub: Subscription): string {
+  const d = daysToKeyDate(sub);
+  if (d === null) return "未设定";
+  const isBilling = keyDateKind(sub) === "billing";
+  const word = isBilling ? "扣费" : "到期";
+  if (d === 0) return `今日${word}`;
+  if (d < 0) return isBilling ? `已过 ${-d} 天` : `已${word} ${-d} 天`;
+  return `${d} 天后${word}`;
+}
+
+/** 关键日期是否在 N 天内（含已过） */
+export function isKeyDateWithin(sub: Subscription, days: number): boolean {
+  const d = daysToKeyDate(sub);
+  return d !== null && d <= days;
+}
+
 /** 折算到 CNY */
 export function toCNY(amount: number, currency: string, rates: Partial<Record<string, number>>): number {
   if (currency === "CNY") return amount;

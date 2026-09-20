@@ -82,11 +82,15 @@
       </view>
 
       <view v-if="!form.is_trial" class="field">
-        <text class="label">下次扣费日</text>
+        <text class="label">{{ form.auto_renew ? '下次扣费日' : '到期日' }}</text>
         <picker mode="date" :value="form.next_billing_date" @change="onNextDateChange">
           <view class="input input-picker">{{ form.next_billing_date || '点击选择' }}</view>
         </picker>
-        <text class="hint">留空则按周期从今天起算</text>
+        <text class="hint">
+          {{ form.auto_renew
+              ? '留空则按周期从今天起算'
+              : '已付到这一天，之后不再续费' }}
+        </text>
       </view>
     </view>
 

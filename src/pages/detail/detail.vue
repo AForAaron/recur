@@ -15,23 +15,15 @@
       </view>
     </view>
 
-    <!-- 倒计时 -->
-    <view v-if="sub.is_trial" class="countdown">
-      <text class="countdown-label">试用剩余</text>
+    <!-- 倒计时。自动续费说「扣费」，非自动续费说「到期」——
+         两者的行动含义不同：前者是去付钱，后者是去做决定。 -->
+    <view class="countdown">
+      <text class="countdown-label">{{ countdownLabel }}</text>
       <text class="countdown-value">
-        <text class="countdown-num">{{ trialLeft }}</text>
+        <text class="countdown-num">{{ countdownAbs }}</text>
         <text class="countdown-unit"> 天</text>
       </text>
-      <text v-if="sub.trial_end_date" class="countdown-sub">{{ sub.trial_end_date }} 结束</text>
-    </view>
-
-    <view v-else class="countdown">
-      <text class="countdown-label">下次扣费</text>
-      <text class="countdown-value">
-        <text class="countdown-num">{{ nextLeft }}</text>
-        <text class="countdown-unit"> 天</text>
-      </text>
-      <text v-if="sub.next_billing_date" class="countdown-sub">{{ formatAmount(sub.amount, sub.currency) }} · ≈ ¥{{ store.cny(sub.amount, sub.currency).toFixed(0) }}</text>
+      <text class="countdown-sub">{{ countdownSub }}</text>
     </view>
 
     <!-- 关键指标（双行：原币种 + RMB） -->
@@ -116,8 +108,7 @@ import {
   dailyCost,
   monthlyCost,
   cumulativePaid,
-  daysUntilNextBilling,
-  trialDaysRemaining,
+  daysToKeyDate,
 } from "@/utils/billing";
 import { daysBetween, todayStr } from "@/utils/date";
 import { formatAmount } from "@/utils/format";
@@ -134,8 +125,33 @@ const sub = computed(() => store.getById(subId.value));
 const dailyNative = computed(() => sub.value ? dailyCost(sub.value) : 0);
 const monthlyNative = computed(() => sub.value ? monthlyCost(sub.value) : 0);
 const cumulativeNative = computed(() => sub.value ? cumulativePaid(sub.value) : 0);
-const trialLeft = computed(() => sub.value ? trialDaysRemaining(sub.value) : 0);
-const nextLeft = computed(() => sub.value ? (daysUntilNextBilling(sub.value) ?? 0) : 0);
+
+// ====== 倒计时 ======
+const keyDays = computed(() => (sub.value ? daysToKeyDate(sub.value) : null));
+const countdownAbs = computed(() => Math.abs(keyDays.value ?? 0));
+
+const countdownLabel = computed(() => {
+  const s = sub.value;
+  if (!s) return "";
+  const d = keyDays.value;
+  if (d !== null && d < 0) {
+    if (s.is_trial) return "试用已结束";
+    return s.auto_renew ? "已过扣费日" : "已过期";
+  }
+  if (s.is_trial) return "试用剩余";
+  return s.auto_renew ? "下次扣费" : "距离到期";
+});
+
+const countdownSub = computed(() => {
+  const s = sub.value;
+  if (!s) return "";
+  const money = `${formatAmount(s.amount, s.currency)} · ≈ ¥${store.cny(s.amount, s.currency).toFixed(0)}`;
+  if (s.is_trial) return s.trial_end_date ? `${s.trial_end_date} 结束` : "";
+  if (!s.next_billing_date) return "";
+  return s.auto_renew
+    ? money
+    : `${s.next_billing_date} 到期 · ${money}`;
+});
 const daysSinceStart = computed(() => sub.value ? daysBetween(sub.value.start_date, todayStr()) : 0);
 
 function cycleLabel(cycle: Cycle, customDays: number | null): string {

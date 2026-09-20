@@ -173,12 +173,18 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     return out.sort((a, b) => a.daysLeft - b.daysLeft);
   }
 
-  /** 把所有正式订阅的 next_billing_date 向今天之后滚动一次 */
+  /**
+   * 把**自动续费**订阅的 next_billing_date 向今天之后滚动。
+   *
+   * 只处理 auto_renew === true 的：非自动续费订阅的 next_billing_date
+   * 语义是「到期日」而非「扣费日」，向前滚动等于假装用户续了费，
+   * 会把已过期的订阅藏起来。
+   */
   function rollForwardAll(): void {
     const today = todayStr();
     let changed = false;
     for (const s of subscriptions.value) {
-      if (s.is_trial || s.status !== "active" || !s.next_billing_date) continue;
+      if (s.is_trial || !s.auto_renew || s.status !== "active" || !s.next_billing_date) continue;
       const next = nextBillingDate(s.start_date, s.cycle, s.cycle_days);
       if (next !== s.next_billing_date && daysBetween(today, next) >= 0) {
         s.next_billing_date = next;
@@ -329,9 +335,11 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
 
     // 4. 修复 next_billing_date 异常值（不覆盖合理的日期）
     //    阈值：未来超过 10 年（之前 nextBillingDate bug 的残留），或过去 30 天以上
+    //    跳过非自动续费：它们的 next_billing_date 是「到期日」，
+    //    长期停留在过去是合法状态（你没续费），不该被"修正"到未来。
     const todayMs = new Date(todayStr()).getTime();
     for (const s of subscriptions.value) {
-      if (s.is_trial || s.status !== "active" || !s.start_date || !s.next_billing_date) continue;
+      if (s.is_trial || !s.auto_renew || s.status !== "active" || !s.start_date || !s.next_billing_date) continue;
       const nextMs = new Date(s.next_billing_date).getTime();
       const daysDiff = (nextMs - todayMs) / 86_400_000;
       if (daysDiff < -30 || daysDiff > 3650) {

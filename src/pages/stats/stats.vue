@@ -96,7 +96,7 @@
           class="trial-row"
           role="button"
           tabindex="0"
-          :aria-label="`${t.name}，${t.trial_end_date} 结束，剩 ${trialLeft(t)} 天`"
+          :aria-label="`${t.name}，${t.trial_end_date}，${trialLeftText(t)}`"
           @click="goDetail(t.id)"
         >
           <view class="trial-tile" :style="{ background: mono(t.name).bg }" aria-hidden="true">
@@ -104,7 +104,7 @@
           </view>
           <view class="trial-main">
             <text class="trial-name">{{ t.name }}</text>
-            <text class="trial-end">{{ t.trial_end_date }} 结束（剩 {{ trialLeft(t) }} 天）</text>
+            <text class="trial-end">{{ t.trial_end_date }} · {{ trialLeftText(t) }}</text>
           </view>
           <text class="trial-action">查看 →</text>
         </view>
@@ -116,7 +116,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useSubscriptionsStore } from "@/store/subscriptions";
-import { trialDaysRemaining } from "@/utils/billing";
+import { daysToKeyDate } from "@/utils/billing";
 import { monogram } from "@/utils/monogram";
 import type { Subscription } from "@/types/subscription";
 
@@ -221,8 +221,13 @@ const sortedTrials = computed(() =>
   )
 );
 
-function trialLeft(t: Subscription): number {
-  return trialDaysRemaining(t);
+/** 试用倒计时文案。已结束的不显示为"剩 0 天"。 */
+function trialLeftText(t: Subscription): string {
+  const d = daysToKeyDate(t);
+  if (d === null) return "未设定";
+  if (d < 0) return `已结束 ${-d} 天`;
+  if (d === 0) return "今日结束";
+  return `剩 ${d} 天`;
 }
 
 function goDetail(id: string) {
