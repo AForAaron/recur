@@ -14,7 +14,9 @@
             class="quick-chip"
             @click="applyTemplate(t)"
           >
-            <text class="quick-icon">{{ t.icon }}</text>
+            <view class="quick-tile" :style="{ background: mono(t.name).bg }" aria-hidden="true">
+              <text class="quick-tile-letter" :style="{ color: mono(t.name).fg }">{{ mono(t.name).letter }}</text>
+            </view>
             <view class="quick-info">
               <text class="quick-name">{{ t.name }}</text>
               <text class="quick-price">{{ formatPrice(t.amount, t.currency, t.cycle) }}</text>
@@ -33,9 +35,13 @@
 
       <view class="field">
         <text class="label">图标</text>
-        <view class="icon-row">
-          <input v-model="form.icon" class="input" placeholder="🎬" maxlength="4" />
-          <view class="icon-preview">{{ form.icon || '📦' }}</view>
+        <view class="tile-row">
+          <view class="tile-preview" :style="{ background: mono(form.name || '订阅').bg }" aria-hidden="true">
+            <text class="tile-preview-letter" :style="{ color: mono(form.name || '订阅').fg }">
+              {{ mono(form.name || '订阅').letter }}
+            </text>
+          </view>
+          <text class="hint">由名称首字自动生成，配色按名称固定</text>
         </view>
       </view>
 
@@ -50,7 +56,8 @@
               :class="{ active: form.category_id === c.id }"
               @click="form.category_id = c.id"
             >
-              <text>{{ c.icon }} {{ c.name }}</text>
+              <view class="cat-dot" :style="{ background: c.color }" aria-hidden="true"></view>
+              <text>{{ c.name }}</text>
             </view>
           </view>
         </scroll-view>
@@ -238,7 +245,9 @@
             class="popup-item template-item"
             @click="applyTemplate(t)"
           >
-            <text class="popup-symbol">{{ t.icon }}</text>
+            <view class="popup-tile" :style="{ background: mono(t.name).bg }" aria-hidden="true">
+              <text class="popup-tile-letter" :style="{ color: mono(t.name).fg }">{{ mono(t.name).letter }}</text>
+            </view>
             <view class="template-info">
               <text class="popup-code">{{ t.name }}</text>
               <text class="popup-name">{{ formatPrice(t.amount, t.currency, t.cycle) }} · {{ t.tags.join(' / ') }}</text>
@@ -266,6 +275,7 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useSubscriptionsStore } from "@/store/subscriptions";
 import { toCNY } from "@/utils/billing";
 import { formatAmount } from "@/utils/format";
+import { monogram } from "@/utils/monogram";
 import { getPopularTemplates, searchTemplates } from "@/data/templates";
 import type { SubscriptionTemplate } from "@/data/templates";
 import type {
@@ -279,6 +289,7 @@ import type {
 
 const store = useSubscriptionsStore();
 const categories = computed(() => store.categories);
+const mono = monogram;
 
 /** 品牌色，与 uni.scss 的 $recur-primary 保持一致。
  *  uni-app 组件的 color prop 只接受字符串，无法读取 SCSS 变量，故在此显式声明。 */
@@ -297,7 +308,7 @@ function openTemplatePopup() {
 
 function applyTemplate(t: SubscriptionTemplate) {
   form.name = t.name;
-  form.icon = t.icon;
+  form.icon = t.icon; // 保留字段以兼容旧数据，展示已改用字母瓷砖
   form.amount = t.amount;
   form.currency = t.currency;
   form.cycle = t.cycle;
@@ -609,7 +620,20 @@ onLoad((opts: any) => {
   transition: background-color 0.15s ease;
 }
 .quick-chip:active { background: $recur-primary-bg; }
-.quick-icon { font-size: 30rpx; }
+.quick-tile {
+  width: 56rpx;
+  height: 56rpx;
+  flex: 0 0 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12rpx;
+}
+.quick-tile-letter {
+  font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1;
+}
 .quick-info {
   display: flex;
   flex-direction: column;
@@ -684,21 +708,24 @@ onLoad((opts: any) => {
   justify-content: center;
 }
 
-.icon-row {
+.tile-row {
   display: flex;
-  gap: 16rpx;
-  align-items: stretch;
-  .input { flex: 1; }
+  align-items: center;
+  gap: 20rpx;
 }
-.icon-preview {
-  width: 80rpx;
-  height: 80rpx;
+.tile-preview {
+  width: 88rpx;
+  height: 88rpx;
+  flex: 0 0 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $recur-primary-bg;
-  border-radius: $recur-radius-input;
-  font-size: 40rpx;
+  border-radius: 18rpx;
+}
+.tile-preview-letter {
+  font-size: 36rpx;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .amount-row {
@@ -732,11 +759,19 @@ onLoad((opts: any) => {
   padding: 0 28rpx;
   display: inline-flex;
   align-items: center;
+  gap: 10rpx;
   background: $recur-card-soft;
   color: $recur-text-2;
   border-radius: $recur-radius-pill;
   font-size: $recur-fs-sm;
   transition: background-color 0.15s ease;
+}
+/* 分类色点：替代 emoji，与统计页饼图图例同色系 */
+.cat-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  flex: 0 0 14rpx;
 }
 .chip.active {
   background: $recur-primary-bg;
@@ -802,7 +837,7 @@ onLoad((opts: any) => {
 }
 
 .btn-primary {
-  background: $recur-primary-strong;   // 白字在其上 6.29:1
+  background: $recur-primary-solid;   // 实底按钮，白字在其上
   color: $recur-text-inverse;
   &.active { background: $recur-primary-hover; }
 }
@@ -851,12 +886,19 @@ onLoad((opts: any) => {
 .popup-item.active {
   background: $recur-primary-bg;
 }
-.popup-symbol {
-  width: 56rpx;
-  font-size: 30rpx;
+.popup-tile {
+  width: 64rpx;
+  height: 64rpx;
+  flex: 0 0 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14rpx;
+}
+.popup-tile-letter {
+  font-size: 26rpx;
   font-weight: 600;
-  color: $recur-primary-strong;
-  text-align: center;
+  line-height: 1;
 }
 .popup-code {
   width: 80rpx;
@@ -923,4 +965,19 @@ onLoad((opts: any) => {
   color: $recur-text-3;
   font-size: $recur-fs-sm;
 }
+
+/* #ifdef H5 */
+/* 桌面端：提交栏与弹层是 fixed 定位，需对齐到居中列 */
+@media screen and (min-width: 768px) {
+  .submit-bar {
+    left: 50%;
+    right: auto;
+    width: var(--recur-app-w, 430px);
+    transform: translateX(-50%);
+  }
+  .popup-sheet {
+    max-width: var(--recur-app-w, 430px);
+  }
+}
+/* #endif */
 </style>

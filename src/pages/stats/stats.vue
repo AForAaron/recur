@@ -75,7 +75,7 @@
         >
           <view class="bar-value">¥{{ Math.round(bar.amount) }}</view>
           <view class="bar-track">
-            <view class="bar-fill" :style="{ height: bar.height + '%' }"></view>
+            <view class="bar-fill" :style="{ transform: `scaleY(${Math.max(bar.height / 100, 0.02)})` }"></view>
           </view>
           <text class="bar-label">{{ bar.label }}</text>
         </view>
@@ -103,7 +103,9 @@
           :aria-label="`${t.name}，${t.trial_end_date} 结束，剩 ${trialLeft(t)} 天`"
           @click="goDetail(t.id)"
         >
-          <text class="trial-icon" aria-hidden="true">{{ t.icon }}</text>
+          <view class="trial-tile" :style="{ background: mono(t.name).bg }" aria-hidden="true">
+            <text class="trial-tile-letter" :style="{ color: mono(t.name).fg }">{{ mono(t.name).letter }}</text>
+          </view>
           <view class="trial-main">
             <text class="trial-name">{{ t.name }}</text>
             <text class="trial-end">{{ t.trial_end_date }} 结束（剩 {{ trialLeft(t) }} 天）</text>
@@ -119,9 +121,11 @@
 import { computed } from "vue";
 import { useSubscriptionsStore } from "@/store/subscriptions";
 import { trialDaysRemaining } from "@/utils/billing";
+import { monogram } from "@/utils/monogram";
 import type { Subscription } from "@/types/subscription";
 
 const store = useSubscriptionsStore();
+const mono = monogram;
 
 /** 卡片底色，与 uni.scss 的 $recur-card 一致。SVG 的 fill 无法读 SCSS 变量。 */
 const CARD_HEX = "#FFFFFF";
@@ -369,12 +373,15 @@ function goDetail(id: string) {
   border-radius: 8rpx 8rpx 0 0;
   overflow: hidden;
 }
+/* 用 transform 而非 height 做动画 —— 改 height 会触发 layout thrash。
+ * 圆角交给父级 .bar-track（有 overflow:hidden），
+ * 避免 scaleY 把自身圆角压变形。 */
 .bar-fill {
   width: 100%;
+  height: 100%;
   background: linear-gradient(180deg, $recur-primary-soft 0%, $recur-primary 100%);
-  border-radius: 8rpx 8rpx 0 0;
-  transition: height 0.3s ease;
-  min-height: 4rpx;
+  transform-origin: bottom;
+  transition: transform 0.3s ease;
 }
 .bar-label {
   font-size: $recur-fs-xs;
@@ -390,15 +397,19 @@ function goDetail(id: string) {
     border-bottom: 1rpx solid $recur-divider;
   }
 }
-.trial-icon {
+.trial-tile {
   width: 64rpx;
   height: 64rpx;
+  flex: 0 0 64rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $recur-trial-bg;
-  border-radius: 12rpx;
-  font-size: 32rpx;
+  border-radius: 14rpx;
+}
+.trial-tile-letter {
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 1;
 }
 .trial-main {
   flex: 1;

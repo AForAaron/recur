@@ -8,56 +8,77 @@
  * 参考 Linear / Apple Health / Notion 风格
  * ============================================================ */
 
-/* —— 品牌主色：柔和紫蓝 ——
- * 分工：primary 只用于大色块（倒计时卡、FAB 等大字号场景，≥3:1 即可）
- *      primary-strong 用于所有「作为文字」和「小字号按钮底」的场景（需 ≥4.5:1）
- * 对比度实测见每行注释，基准为最坏背景。 */
-$recur-primary:        #6366F1;   // indigo-500  4.47:1 —— 仅大色块
-$recur-primary-strong: #4F46E5;   // indigo-600  6.29:1 —— 文字 & 小按钮
-$recur-primary-hover:  #4338CA;   // indigo-700  7.90:1
-$recur-primary-soft:   #818CF8;   // indigo-400  仅装饰
-$recur-primary-bg:     #EEF2FF;   // indigo-50   淡紫底
+/* ============================================================
+ * 颜色 token 全部指向 CSS 自定义属性
+ *
+ * 这样定义一次、在 App.vue 里给浅色与深色两套值，
+ * 主题切换只需改根元素上的 --recur-* 值，无需重复任何规则。
+ * 尺寸、圆角、字号等非颜色 token 仍是编译期 SCSS 变量。
+ *
+ * 各值的对比度实测见 App.vue 中的定义处。
+ * ============================================================ */
 
-/* —— 文本层级：深灰而非纯黑，更柔和 —— */
-$recur-text-1:         #1F2937;   // gray-800  14.68:1  标题
-$recur-text-2:         #4B5563;   // gray-600   7.56:1  正文
-$recur-text-3:         #5F6673;   // 5.25:1（最坏背景）辅助
-                                  // 原值 #9CA3AF 仅 2.31:1，全面不达 WCAG AA
-$recur-text-inverse:   #FFFFFF;
+/* —— 品牌主色 ——
+ * 三个角色分工，不可混用：
+ *   primary        大色块（渐变、装饰），对比度要求最低
+ *   primary-strong 所有「作为文字」的场景
+ *   primary-solid  所有「作为实底按钮/FAB 背景」的场景（白字在其上）
+ * 深色模式下前两者要变浅、后者要保持饱和，所以必须分开。 */
+$recur-primary:        var(--recur-primary);
+$recur-primary-strong: var(--recur-primary-strong);
+$recur-primary-solid:  var(--recur-primary-solid);
+$recur-primary-hover:  var(--recur-primary-hover);
+$recur-primary-soft:   var(--recur-primary-soft);
+$recur-primary-bg:     var(--recur-primary-bg);
+
+/* —— 文本层级 —— */
+$recur-text-1:         var(--recur-text-1);
+$recur-text-2:         var(--recur-text-2);
+$recur-text-3:         var(--recur-text-3);
+$recur-text-inverse:   var(--recur-text-inverse);
 
 /* —— 背景与卡片 —— */
-$recur-bg:             #F9FAFB;   // gray-50   页面底
-$recur-card:           #FFFFFF;
-$recur-card-soft:      #F3F4F6;   // gray-100  嵌套底
-$recur-divider:        #F3F4F6;
+$recur-bg:             var(--recur-bg);
+$recur-card:           var(--recur-card);
+$recur-card-soft:      var(--recur-card-soft);
+$recur-divider:        var(--recur-divider);
 
-/* —— 状态色（文字安全：均 ≥4.5:1）—— */
-$recur-success:        #047857;   // emerald-700  4.98:1（原 #10B981 仅 2.30:1）
-$recur-warning:        #B45309;   // amber-700    4.56:1（原 #F59E0B 仅 1.95:1）
-$recur-danger:         #B91C1C;   // red-700      5.88:1（原 #EF4444 仅 3.42:1）
+/* —— 状态色 —— */
+$recur-success:        var(--recur-success);
+$recur-warning:        var(--recur-warning);
+$recur-danger:         var(--recur-danger);
 
 /* —— 角标 —— */
-$recur-trial-bg:       #FEF3C7;   // amber-100
-$recur-trial-text:     #92400E;   // amber-800  6.37:1 ✓
-$recur-neutral-bg:     #F3F4F6;   // 中性角标底
-$recur-neutral-text:   #5F6673;   // 中性角标字  4.39:1
-$recur-danger-bg:      #FEE2E2;   // 危险角标底
+$recur-trial-bg:       var(--recur-trial-bg);
+$recur-trial-text:     var(--recur-trial-text);
+$recur-neutral-bg:     var(--recur-neutral-bg);
+$recur-neutral-text:   var(--recur-neutral-text);
+$recur-danger-bg:      var(--recur-danger-bg);
 
-/* —— 遮罩与阴影（原先散落在各页面的硬编码值）—— */
-$recur-mask:           rgba(31, 41, 55, 0.4);
-$recur-scrim:          rgba(249, 250, 251, 0.92);   // 底部工具条半透明底
-$recur-shadow-tab:     0 2rpx 8rpx rgba(99, 102, 241, 0.08);
-$recur-shadow-fab:     0 8rpx 24rpx rgba(99, 102, 241, 0.35);
+/* —— 遮罩与阴影 —— */
+$recur-mask:           var(--recur-mask);
+$recur-scrim:          var(--recur-scrim);
+$recur-shadow-tab:     var(--recur-shadow-tab);
+$recur-shadow-fab:     var(--recur-shadow-fab);
+$recur-shadow-raised:  var(--recur-shadow-raised);
+
+/* —— 瓷砖配色（图标位）——
+ * 浅底 + 深字，字对底 ≥4.5:1（WCAG AA）。由名称哈希稳定选取。
+ * 取值见 src/utils/monogram.ts 的 TILE_COLORS，此处仅作文档说明。 */
+
 
 /* —— 触摸目标下限（WCAG 2.5.5 AAA / Apple HIG 44pt）—— */
 $recur-tap-min:        88rpx;     // = 44px @375 宽
 
-/* —— 字号（紧凑） —— */
-$recur-fs-display:     36rpx;
-$recur-fs-title:       30rpx;
-$recur-fs-body:        28rpx;
-$recur-fs-sm:          24rpx;
-$recur-fs-xs:          22rpx;
+/* —— 字号 ——
+ * 阶梯要拉开：相邻档至少差 4rpx，让层级一眼可辨。
+ * 过窄的阶梯（如 22/24/28/30）读起来是"平的"，没有主次。 */
+$recur-fs-hero:        64rpx;   // 32px  详情页倒计时数字
+$recur-fs-display:     40rpx;   // 20px  KPI 数值
+$recur-fs-title:       32rpx;   // 16px  卡片标题 / 区块标题
+$recur-fs-body:        28rpx;   // 14px  正文
+$recur-fs-sm:          24rpx;   // 12px  辅助
+$recur-fs-xs:          22rpx;   // 11px  极小（角标）
 
 /* —— 间距节奏 —— */
 $recur-gap-card:       16rpx;

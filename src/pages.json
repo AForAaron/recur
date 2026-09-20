@@ -4,8 +4,8 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "Recur",
-        "navigationBarBackgroundColor": "#5B6CFF",
-        "navigationBarTextStyle": "white",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black",
         "enablePullDownRefresh": true
       }
     },
@@ -13,40 +13,40 @@
       "path": "pages/add/add",
       "style": {
         "navigationBarTitleText": "添加订阅",
-        "navigationBarBackgroundColor": "#5B6CFF",
-        "navigationBarTextStyle": "white"
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
       }
     },
     {
       "path": "pages/detail/detail",
       "style": {
         "navigationBarTitleText": "订阅详情",
-        "navigationBarBackgroundColor": "#5B6CFF",
-        "navigationBarTextStyle": "white"
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
       }
     },
     {
       "path": "pages/stats/stats",
       "style": {
         "navigationBarTitleText": "统计",
-        "navigationBarBackgroundColor": "#5B6CFF",
-        "navigationBarTextStyle": "white"
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
       }
     },
     {
       "path": "pages/settings/settings",
       "style": {
         "navigationBarTitleText": "设置",
-        "navigationBarBackgroundColor": "#5B6CFF",
-        "navigationBarTextStyle": "white"
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
       }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "Recur",
-    "navigationBarBackgroundColor": "#5B6CFF",
-    "backgroundColor": "#F5F6FA"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F9FAFB"
   },
   "tabBar": {
     "color": "#999999",

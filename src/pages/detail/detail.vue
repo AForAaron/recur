@@ -2,7 +2,9 @@
   <view v-if="sub" class="page">
     <!-- 头部 -->
     <view class="hero">
-      <view class="hero-icon">{{ sub.icon }}</view>
+      <view class="hero-tile" :style="{ background: mono(sub.name).bg }" aria-hidden="true">
+        <text class="hero-tile-letter" :style="{ color: mono(sub.name).fg }">{{ mono(sub.name).letter }}</text>
+      </view>
       <text class="hero-name">{{ sub.name }}</text>
       <view class="hero-meta">
         <text class="hero-cycle">{{ cycleLabel(sub.cycle, sub.cycle_days) }} · {{ formatAmount(sub.amount, sub.currency) }}</text>
@@ -119,9 +121,11 @@ import {
 } from "@/utils/billing";
 import { daysBetween, todayStr } from "@/utils/date";
 import { formatAmount } from "@/utils/format";
+import { monogram } from "@/utils/monogram";
 import type { Cycle } from "@/types/subscription";
 
 const store = useSubscriptionsStore();
+const mono = monogram;
 
 const subId = ref<string>("");
 const sub = computed(() => store.getById(subId.value));
@@ -211,19 +215,23 @@ onLoad((opts: any) => {
   gap: 12rpx;
   margin-bottom: 16rpx;
 }
-.hero-icon {
+.hero-tile {
   width: 120rpx;
   height: 120rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $recur-primary-bg;
-  border-radius: $recur-radius-card;
-  font-size: 64rpx;
-  margin-bottom: 12rpx;
+  border-radius: 28rpx;
+  margin-bottom: 16rpx;
+}
+.hero-tile-letter {
+  font-size: 52rpx;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .hero-name {
-  font-size: 38rpx;
+  font-size: $recur-fs-display;
   font-weight: 600;
   color: $recur-text-1;
 }
@@ -257,7 +265,7 @@ onLoad((opts: any) => {
 .badge-cancelled { background: $recur-danger-bg;  color: $recur-danger; }
 
 .countdown {
-  background: $recur-primary-strong;   // 白字在其上 6.29:1（$recur-primary 仅 4.47:1）
+  background: $recur-primary-solid;   // 实底按钮用 solid，深色模式下不会变浅导致白字失效
   border-radius: $recur-radius-card;
   padding: 32rpx;
   display: flex;
