@@ -20,7 +20,14 @@ export function yearlyCost(sub: Subscription): number {
 
 /**
  * 累计已付（简化版，MVP）
- * 公式：floor((今天 - start_date) / cycle_days + 1) × amount
+ *
+ * 自动续费：floor((今天 - start_date) / cycle_days + 1) × amount
+ *   +1 是首期。
+ * 非自动续费：只算 1 × amount。
+ *   用户通常只付过一次——公式若照搬自动续费逻辑，会假装用户每个周期都在付，
+ *   导致 Obsidian Sync ¥138/年 显示成 ¥276，偏差 2-4 倍。
+ *   模型没有「手动续费次数」字段，所以非自动续费一律按一次计。
+ *   真正精确需要 BillingRecord 流（阶段 2）。
  * 试用 = 0；已取消/暂停 = 0
  */
 export function cumulativePaid(sub: Subscription): number {
@@ -30,6 +37,9 @@ export function cumulativePaid(sub: Subscription): number {
 
   const step = cycleToDays(sub.cycle, sub.cycle_days);
   if (step <= 0 || sub.amount <= 0) return 0;
+
+  // 非自动续费：只算首期。后续若要支持手动续费计数，需要先加字段。
+  if (!sub.auto_renew) return sub.amount;
 
   const elapsed = daysBetween(sub.start_date, todayStr());
   if (elapsed < 0) return 0;

@@ -83,7 +83,6 @@
       <view class="action action-primary" role="button" tabindex="0" @click="onUpgrade">升级订阅数据</view>
       <view class="action" role="button" tabindex="0" @click="onImportSeed">从模板补充订阅</view>
       <view class="action" role="button" tabindex="0" @click="onExport">导出 JSON</view>
-      <view class="action" role="button" tabindex="0" @click="onImport">从 JSON 导入</view>
       <view class="action action-danger" role="button" tabindex="0" @click="onClear">清空所有数据</view>
     </view>
 
@@ -206,14 +205,6 @@ function onExport() {
     } catch { /* fallthrough */ }
   }
   uni.setClipboardData({ data: json, success: () => uni.showToast({ title: "已复制到剪贴板" }) });
-}
-
-function onImport() {
-  uni.showModal({
-    title: "导入数据",
-    content: "请将 JSON 内容粘贴到下方输入框（开发中）",
-    showCancel: false,
-  });
 }
 
 function onUpgrade() {
