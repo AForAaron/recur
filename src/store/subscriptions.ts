@@ -130,14 +130,15 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
   /**
    * 试用中的订阅。
    *
-   * 与 autoRenewing / nonRenewing 用同一个 status 条件（active），
-   * 这样四个 tab 才构成严密划分：
-   *   全部 = 自动续费 + 非自动续费 + 试用 + 已暂停
-   * 若这里放宽到 "!== cancelled"，暂停中的试用会被重复计入。
+   * 以 `is_trial` 为准，与 status 解耦：trial 项的 status 通常是 "trial"
+   * （见 seedFromTemplates / upgradeUserData），不是 "active"。
+   * 排除条件只有 cancelled 和 archived——paused 的试用仍属试用，应可见。
+   * 这样四 tab 的并集 = listed：
+   *   autoRenewing + nonRenewing + trials + paused ⊆ listed
    */
   const trials = computed(() =>
     subscriptions.value.filter(
-      (s) => s.is_trial && s.status === "active" && !s.archived_at
+      (s) => s.is_trial && s.status !== "cancelled" && !s.archived_at
     )
   );
 
