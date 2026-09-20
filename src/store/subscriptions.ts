@@ -93,6 +93,24 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     persist();
   }
 
+  /**
+   * 取消订阅 = 停止 + 归档。
+   *
+   * 「已取消」不是与 active 平级的状态，而是生命周期的终点，
+   * 所以它不该留在主列表里，也不该占一个筛选 tab。
+   * 取消时同时设 archived_at，订阅即离开主列表进入归档，
+   * 数据保留（累计已付等历史仍在），可在设置页查看、恢复或彻底删除。
+   */
+  function cancel(id: string): void {
+    update(id, { status: "cancelled", archived_at: Date.now() });
+  }
+
+  /** 从归档恢复为正常订阅 */
+  function unarchive(id: string): void {
+    update(id, { status: "active", archived_at: null });
+  }
+
+  /** 归档（不改状态，仅移出主列表） */
   function archive(id: string): void {
     update(id, { archived_at: Date.now() });
   }
@@ -147,8 +165,12 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     )
   );
 
-  /** 已归档（含已取消） */
-  const archived = computed(() => subscriptions.value.filter((s) => !!s.archived_at));
+  /** 已归档（当前即已取消的订阅），按归档时间倒序 */
+  const archived = computed(() =>
+    subscriptions.value
+      .filter((s) => !!s.archived_at)
+      .sort((a, b) => (b.archived_at ?? 0) - (a.archived_at ?? 0))
+  );
 
   // ============ RMB 折算聚合（所有跨币种统计都走这里） ============
   const rates = computed(() => settings.value.exchange_rates);
@@ -275,6 +297,16 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     subscriptions.value = subscriptions.value.filter((s) => s.name !== "CloudBase 试用");
     if (subscriptions.value.length !== before) {
       changes.push(`删除旧 CloudBase 试用（${before - subscriptions.value.length} 条）`);
+    }
+
+    // 1.2 存量迁移：早期版本取消订阅时只设 status 不设 archived_at，
+    //     这类记录会同时被主列表和归档排除，变得完全不可见。
+    //     这里补上 archived_at，让它们进入归档。
+    for (const s of subscriptions.value) {
+      if (s.status === "cancelled" && !s.archived_at) {
+        s.archived_at = s.updated_at || Date.now();
+        changes.push(`${s.name} 补记归档时间（原先不可见）`);
+      }
     }
 
     // 1.5 补齐缺失的分类（基于 DEFAULT_CATEGORIES；不动用户已自定义的分类）
@@ -411,6 +443,8 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     add,
     update,
     remove,
+    cancel,
+    unarchive,
     archive,
     getById,
     upcoming,

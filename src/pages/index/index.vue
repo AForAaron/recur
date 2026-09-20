@@ -336,7 +336,7 @@ function onLongPress(sub: Subscription) {
     success: (e) => {
       if (e.tapIndex === 0) uni.navigateTo({ url: `/pages/add/add?id=${sub.id}` });
       else if (e.tapIndex === 1) { store.update(sub.id, { status: "paused" }); uni.showToast({ title: "已暂停" }); }
-      else if (e.tapIndex === 2) { store.update(sub.id, { status: "cancelled" }); uni.showToast({ title: "已取消" }); }
+      else if (e.tapIndex === 2) { store.cancel(sub.id); uni.showToast({ title: "已取消，已移入归档" }); }
       else if (e.tapIndex === 3) {
         uni.showModal({
           title: "确认删除",

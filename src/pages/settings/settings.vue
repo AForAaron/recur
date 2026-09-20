@@ -62,6 +62,20 @@
       </view>
     </view>
 
+    <!-- 已取消
+         「已取消」是生命周期的终点，不是与「订阅」平级的另一类，
+         所以它不占筛选 tab，只在设置里留一个入口。 -->
+    <view class="card">
+      <view class="card-title">已取消</view>
+      <view class="row row-link" role="button" tabindex="0" @click="goArchived">
+        <text class="row-label">已取消的订阅</text>
+        <view class="row-right">
+          <text class="row-value">{{ archivedCount }} 项</text>
+          <view class="chev" aria-hidden="true"></view>
+        </view>
+      </view>
+    </view>
+
     <!-- 数据 -->
     <view class="card">
       <view class="card-title">数据</view>
@@ -111,6 +125,11 @@ import { todayStr } from "@/utils/date";
 import type { Theme, Currency } from "@/types/subscription";
 
 const store = useSubscriptionsStore();
+const archivedCount = computed(() => store.archived.length);
+
+function goArchived() {
+  uni.navigateTo({ url: "/pages/archived/archived" });
+}
 
 /** 危险色，与 uni.scss 的 $recur-danger 一致。uni-app 模态框 API 只接受字符串。 */
 const DANGER_HEX = "#B91C1C";
@@ -318,6 +337,22 @@ onShow(() => {
 .row-value { color: $recur-text-1; font-weight: 500; }
 .row-value.ok { color: $recur-success; }
 .row-value.off { color: $recur-text-3; }
+
+/* 可跳转的行：右侧带箭头 */
+.row-link { cursor: pointer; }
+.row-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.chev {
+  width: 14rpx;
+  height: 14rpx;
+  border-right: 3rpx solid $recur-text-3;
+  border-top: 3rpx solid $recur-text-3;
+  transform: rotate(45deg);
+  flex: 0 0 14rpx;
+}
 
 /* —— 汇率行 —— */
 .rate-row {

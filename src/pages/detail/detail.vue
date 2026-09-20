@@ -180,12 +180,13 @@ function onResume() { store.update(subId.value, { status: "active" }); uni.showT
 
 function onCancel() {
   uni.showModal({
-    title: "确认取消",
-    content: "取消后将从活跃列表移除（仍保留记录）",
+    title: "确认取消订阅",
+    content: "取消后会移入「已取消」，不再出现在订阅列表。记录保留，可在设置里查看或恢复。",
     success: (r) => {
       if (r.confirm) {
-        store.update(subId.value, { status: "cancelled" });
-        uni.showToast({ title: "已取消" });
+        store.cancel(subId.value);
+        uni.showToast({ title: "已取消，已移入归档" });
+        setTimeout(() => uni.navigateBack(), 700);
       }
     },
   });
