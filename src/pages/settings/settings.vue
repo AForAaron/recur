@@ -104,6 +104,7 @@ import { useSubscriptionsStore } from "@/store/subscriptions";
 import { notificationPermission, requestNotificationPermission } from "@/utils/notify";
 import { storage } from "@/utils/storage";
 import { CURRENCY_META } from "@/utils/format";
+import { applyTheme, THEME_OPTIONS } from "@/utils/theme";
 import { USER_TEMPLATES } from "@/data/templates";
 import { DEFAULT_SETTINGS } from "@/types/subscription";
 import { todayStr } from "@/utils/date";
@@ -116,11 +117,7 @@ const DANGER_HEX = "#B91C1C";
 const settings = computed(() => store.settings);
 const notifyPerm = ref<NotificationPermission>(notificationPermission());
 
-const themes: Array<{ value: Theme; label: string }> = [
-  { value: "auto",  label: "跟随系统" },
-  { value: "light", label: "浅色" },
-  { value: "dark",  label: "深色" },
-];
+const themes = THEME_OPTIONS;
 
 // 汇率维护：本地 draft，未点保存前不影响全局
 const rateDraft = reactive<Record<string, number | undefined>>({ ...settings.value.exchange_rates });
@@ -157,6 +154,7 @@ const permLabel = computed(() => {
 function setTheme(t: Theme) {
   store.settings.theme = t;
   store.persist();
+  applyTheme(t);   // 直接生效，不依赖 watch 链路
 }
 
 async function requestPerm() {

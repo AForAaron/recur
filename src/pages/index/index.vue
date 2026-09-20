@@ -2,7 +2,18 @@
   <view class="page">
     <!-- 汇总：单一主数值 + 一行次要信息（替代原先三等分的 hero-metric 模板） -->
     <view class="summary">
-      <text class="summary-label">本月合计</text>
+      <view class="summary-head">
+        <text class="summary-label">本月合计</text>
+        <view
+          class="theme-btn"
+          role="button"
+          :aria-label="`外观：${themeLabel}，点击切换`"
+          tabindex="0"
+          @click="themePopupOpen = true"
+        >
+          <view class="theme-dot" :class="`is-${store.settings.theme}`" aria-hidden="true"></view>
+        </view>
+      </view>
       <text class="summary-value">¥{{ Math.round(store.totalMonthlyRMB) }}</text>
       <view class="summary-meta">
         <text class="summary-meta-item">日均 ¥{{ store.totalDailyRMB.toFixed(1) }}</text>
@@ -119,6 +130,28 @@
         <view class="popup-cancel" role="button" tabindex="0" @click="sortPopupOpen = false">取消</view>
       </view>
     </view>
+
+    <!-- 外观弹层 -->
+    <view v-if="themePopupOpen" class="popup-mask" @click="themePopupOpen = false">
+      <view class="popup-sheet" @click.stop>
+        <view class="popup-title">外观</view>
+        <view
+          v-for="opt in THEME_OPTIONS"
+          :key="opt.value"
+          class="popup-item"
+          :class="{ active: store.settings.theme === opt.value }"
+          role="button"
+          tabindex="0"
+          :aria-label="opt.label"
+          @click="pickTheme(opt.value)"
+        >
+          <view class="theme-dot theme-dot--sm" :class="`is-${opt.value}`" aria-hidden="true"></view>
+          <text class="popup-name">{{ opt.label }}</text>
+          <text v-if="store.settings.theme === opt.value" class="popup-check" aria-hidden="true">✓</text>
+        </view>
+        <view class="popup-cancel" role="button" tabindex="0" @click="themePopupOpen = false">取消</view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -135,7 +168,8 @@ import {
 } from "@/utils/billing";
 import { formatAmount } from "@/utils/format";
 import { monogram } from "@/utils/monogram";
-import type { Subscription, Cycle } from "@/types/subscription";
+import { applyTheme, THEME_OPTIONS } from "@/utils/theme";
+import type { Subscription, Cycle, Theme } from "@/types/subscription";
 
 const store = useSubscriptionsStore();
 onShow(() => store.rollForwardAll());
@@ -204,6 +238,18 @@ const sortPopupOpen = ref(false);
 function pickSort(v: SortBy) {
   sortBy.value = v;
   sortPopupOpen.value = false;
+}
+
+// ====== 外观 ======
+const themePopupOpen = ref(false);
+const themeLabel = computed(
+  () => THEME_OPTIONS.find(o => o.value === store.settings.theme)?.label ?? "跟随系统"
+);
+function pickTheme(t: Theme) {
+  store.settings.theme = t;
+  store.persist();
+  applyTheme(t);
+  themePopupOpen.value = false;
 }
 
 // ====== 按紧急度分组 ======
@@ -330,11 +376,43 @@ onPullDownRefresh(() => {
   padding: 36rpx 32rpx 32rpx;
   margin-bottom: 24rpx;
 }
+.summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
 .summary-label {
-  display: block;
   font-size: $recur-fs-sm;
   color: $recur-text-3;
-  margin-bottom: 8rpx;
+}
+
+/* 外观切换：图标用 CSS 绘制，不用 Unicode 字形或 emoji。
+ * 空心 = 浅色 / 实心 = 深色 / 半明半暗 = 跟随系统 */
+.theme-btn {
+  width: 64rpx;
+  height: 64rpx;
+  margin: -14rpx -14rpx -14rpx 0;   /* 视觉贴角，触摸区仍保持 64rpx */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.theme-dot {
+  width: 30rpx;
+  height: 30rpx;
+  flex: 0 0 30rpx;
+  border-radius: 50%;
+  border: 3rpx solid $recur-text-2;
+  box-sizing: border-box;
+}
+.theme-dot.is-auto  { background: linear-gradient(90deg, $recur-text-2 50%, transparent 50%); }
+.theme-dot.is-light { background: transparent; }
+.theme-dot.is-dark  { background: $recur-text-2; }
+.theme-dot--sm {
+  width: 26rpx;
+  height: 26rpx;
+  flex: 0 0 26rpx;
 }
 .summary-value {
   display: block;

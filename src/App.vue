@@ -1,52 +1,10 @@
 <script setup lang="ts">
 import { onLaunch, onShow } from "@dcloudio/uni-app";
-import { watch } from "vue";
 import { registerServiceWorker, checkAndNotify } from "@/utils/notify";
 import { useSubscriptionsStore } from "@/store/subscriptions";
-import type { Theme } from "@/types/subscription";
-
-/**
- * 应用主题。
- * auto  → 移除 data-theme，交给 @media (prefers-color-scheme)
- * light → data-theme="light"
- * dark  → data-theme="dark"
- */
-function applyTheme(theme: Theme) {
-  // #ifdef H5
-  const root = document.documentElement;
-  if (theme === "auto") root.removeAttribute("data-theme");
-  else root.setAttribute("data-theme", theme);
-
-  // 同步浏览器 UI 色（地址栏等）
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) {
-    const dark = theme === "dark"
-      || (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-    meta.setAttribute("content", dark ? "#0B0F19" : "#F9FAFB");
-  }
-  // #endif
-
-  // #ifdef MP-WEIXIN
-  // 小程序端 tabBar 颜色需通过 API 设置，无法走 CSS
-  const dark = theme === "dark";
-  uni.setTabBarStyle({
-    backgroundColor: dark ? "#161B26" : "#FFFFFF",
-    color: dark ? "#8B94A5" : "#5F6673",
-    selectedColor: dark ? "#A5B4FC" : "#4F46E5",
-    borderStyle: dark ? "black" : "white",
-  });
-  // #endif
-}
+import { applyTheme } from "@/utils/theme";
 
 const store = useSubscriptionsStore();
-
-// 设置页切换主题后立即生效。
-// 放在 setup 顶层而非 onLaunch 内——onLaunch 的回调不在响应式作用域里，
-// 在那里注册的 watch 不保证被正确收集。
-watch(
-  () => store.settings.theme,
-  (t) => applyTheme(t)
-);
 
 onLaunch(() => {
   applyTheme(store.settings.theme);
