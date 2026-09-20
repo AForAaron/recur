@@ -271,7 +271,9 @@ button::after { border: none; }
     background-color: #e5e7eb;
   }
 
-  uni-tabbar,
+  /* 注意：只选 .uni-tabbar（内层可见条），不选外层 <uni-tabbar>。
+   * 外层若加了 transform，会成为内层 position:fixed 的新包含块，
+   * 把内层锁死在文档底部而不是视口底部——tab bar 就消失了。 */
   .uni-tabbar {
     max-width: var(--recur-app-w);
     left: 50% !important;
