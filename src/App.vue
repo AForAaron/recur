@@ -210,10 +210,10 @@ page {
 }
 
 .summary-value,
+.summary-meta-item,
 .card-amount,
 .card-meta,
 .card-when,
-.kpi-value,
 .metric-value {
   font-variant-numeric: tabular-nums;
 }

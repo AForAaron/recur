@@ -1,18 +1,14 @@
 <template>
   <view class="page">
-    <!-- KPI（统一 RMB） -->
-    <view class="kpi">
-      <view class="kpi-item">
-        <text class="kpi-label">本月</text>
-        <text class="kpi-value">¥{{ Math.round(store.totalMonthlyRMB) }}</text>
-      </view>
-      <view class="kpi-item">
-        <text class="kpi-label">本年</text>
-        <text class="kpi-value">¥{{ Math.round(store.totalYearlyRMB) }}</text>
-      </view>
-      <view class="kpi-item">
-        <text class="kpi-label">累计已付</text>
-        <text class="kpi-value">¥{{ Math.round(store.totalCumulativeRMB) }}</text>
+    <!-- 汇总：与首页同一套结构 —— 单一主数值 + 一行次要信息。
+         三等分的 hero-metric 模板让三个数字权重相同，读不出重点。 -->
+    <view class="summary">
+      <text class="summary-label">累计已付</text>
+      <text class="summary-value">¥{{ Math.round(store.totalCumulativeRMB) }}</text>
+      <view class="summary-meta">
+        <text class="summary-meta-item">本月 ¥{{ Math.round(store.totalMonthlyRMB) }}</text>
+        <text class="summary-dot">·</text>
+        <text class="summary-meta-item">本年 ¥{{ Math.round(store.totalYearlyRMB) }}</text>
       </view>
     </view>
 
@@ -240,30 +236,42 @@ function goDetail(id: string) {
   padding: 20rpx 24rpx 60rpx;
 }
 
-.kpi {
+.summary {
   background: $recur-card;
   border-radius: $recur-radius-card;
-  padding: 28rpx 32rpx;
-  display: flex;
-  margin-bottom: 16rpx;
+  padding: 36rpx 32rpx 32rpx;
+  margin-bottom: 24rpx;
 }
-.kpi-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-  border-right: 1rpx solid $recur-divider;
-  &:last-child { border-right: none; }
-}
-.kpi-label {
-  font-size: $recur-fs-xs;
+.summary-label {
+  display: block;
+  font-size: $recur-fs-sm;
   color: $recur-text-3;
+  margin-bottom: 8rpx;
 }
-.kpi-value {
-  font-size: 32rpx;
+.summary-value {
+  display: block;
+  font-size: $recur-fs-display;
   font-weight: 600;
   color: $recur-text-1;
-  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.summary-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+.summary-meta-item {
+  font-size: $recur-fs-sm;
+  color: $recur-text-2;
+  font-variant-numeric: tabular-nums;
+}
+.summary-dot {
+  font-size: $recur-fs-sm;
+  color: $recur-text-3;
 }
 
 .card {

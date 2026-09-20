@@ -7,11 +7,12 @@
         <view
           class="theme-btn"
           role="button"
-          :aria-label="`外观：${themeLabel}，点击切换`"
+          :aria-label="`外观：${themeLabel}，点击切换到下一个`"
           tabindex="0"
-          @click="themePopupOpen = true"
+          @click="cycleTheme"
         >
           <view class="theme-dot" :class="`is-${store.settings.theme}`" aria-hidden="true"></view>
+          <text class="theme-text">{{ themeLabel }}</text>
         </view>
       </view>
       <text class="summary-value">¥{{ Math.round(store.totalMonthlyRMB) }}</text>
@@ -131,27 +132,8 @@
       </view>
     </view>
 
-    <!-- 外观弹层 -->
-    <view v-if="themePopupOpen" class="popup-mask" @click="themePopupOpen = false">
-      <view class="popup-sheet" @click.stop>
-        <view class="popup-title">外观</view>
-        <view
-          v-for="opt in THEME_OPTIONS"
-          :key="opt.value"
-          class="popup-item"
-          :class="{ active: store.settings.theme === opt.value }"
-          role="button"
-          tabindex="0"
-          :aria-label="opt.label"
-          @click="pickTheme(opt.value)"
-        >
-          <view class="theme-dot theme-dot--sm" :class="`is-${opt.value}`" aria-hidden="true"></view>
-          <text class="popup-name">{{ opt.label }}</text>
-          <text v-if="store.settings.theme === opt.value" class="popup-check" aria-hidden="true">✓</text>
-        </view>
-        <view class="popup-cancel" role="button" tabindex="0" @click="themePopupOpen = false">取消</view>
-      </view>
-    </view>
+    <!-- 外观：一点即切，不弹层。
+         精确选择（三选一）在设置页，这里只做快速循环。 -->
   </view>
 </template>
 
@@ -241,15 +223,25 @@ function pickSort(v: SortBy) {
 }
 
 // ====== 外观 ======
-const themePopupOpen = ref(false);
+/** 循环顺序：跟随系统 → 浅色 → 深色 → 跟随系统 */
+const THEME_CYCLE: Theme[] = ["auto", "light", "dark"];
+
 const themeLabel = computed(
   () => THEME_OPTIONS.find(o => o.value === store.settings.theme)?.label ?? "跟随系统"
 );
-function pickTheme(t: Theme) {
-  store.settings.theme = t;
+
+/** 一点即切。弹层是两步操作，对三态开关太重。 */
+function cycleTheme() {
+  const i = THEME_CYCLE.indexOf(store.settings.theme);
+  const next = THEME_CYCLE[(i + 1) % THEME_CYCLE.length];
+  store.settings.theme = next;
   store.persist();
-  applyTheme(t);
-  themePopupOpen.value = false;
+  applyTheme(next);
+  uni.showToast({
+    title: THEME_OPTIONS.find(o => o.value === next)?.label ?? "",
+    icon: "none",
+    duration: 1000,
+  });
 }
 
 // ====== 按紧急度分组 ======
@@ -387,21 +379,27 @@ onPullDownRefresh(() => {
   color: $recur-text-3;
 }
 
-/* 外观切换：图标用 CSS 绘制，不用 Unicode 字形或 emoji。
+/* 外观切换：一点即切，带文字标签说明当前模式。
+ * 图标用 CSS 绘制，不用 Unicode 字形或 emoji。
  * 空心 = 浅色 / 实心 = 深色 / 半明半暗 = 跟随系统 */
 .theme-btn {
-  width: 64rpx;
-  height: 64rpx;
-  margin: -14rpx -14rpx -14rpx 0;   /* 视觉贴角，触摸区仍保持 64rpx */
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
+  gap: 10rpx;
+  min-height: 60rpx;
+  padding: 0 18rpx;
+  margin: -10rpx -18rpx -10rpx 0;
+  border-radius: $recur-radius-pill;
+  background: $recur-card-soft;
+}
+.theme-text {
+  font-size: $recur-fs-xs;
+  color: $recur-text-2;
 }
 .theme-dot {
-  width: 30rpx;
-  height: 30rpx;
-  flex: 0 0 30rpx;
+  width: 26rpx;
+  height: 26rpx;
+  flex: 0 0 26rpx;
   border-radius: 50%;
   border: 3rpx solid $recur-text-2;
   box-sizing: border-box;
@@ -409,11 +407,6 @@ onPullDownRefresh(() => {
 .theme-dot.is-auto  { background: linear-gradient(90deg, $recur-text-2 50%, transparent 50%); }
 .theme-dot.is-light { background: transparent; }
 .theme-dot.is-dark  { background: $recur-text-2; }
-.theme-dot--sm {
-  width: 26rpx;
-  height: 26rpx;
-  flex: 0 0 26rpx;
-}
 .summary-value {
   display: block;
   font-size: $recur-fs-display;

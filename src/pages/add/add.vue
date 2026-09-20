@@ -26,47 +26,25 @@
       </scroll-view>
     </view>
 
-    <!-- 基本信息 -->
+    <!-- 必填：只保留真正需要用户输入的字段。
+         其余全部折叠进「更多选项」，避免一屏塞 15 个字段。 -->
     <view class="group">
       <view class="field">
         <text class="label">名称 <text class="req">*</text></text>
-        <input v-model="form.name" class="input" placeholder="如：Netflix" maxlength="40" />
-      </view>
-
-      <view class="field">
-        <text class="label">图标</text>
-        <view class="tile-row">
-          <view class="tile-preview" :style="{ background: mono(form.name || '订阅').bg }" aria-hidden="true">
+        <view class="name-row">
+          <view
+            class="tile-preview"
+            :style="{ background: mono(form.name || '订阅').bg }"
+            aria-hidden="true"
+          >
             <text class="tile-preview-letter" :style="{ color: mono(form.name || '订阅').fg }">
               {{ mono(form.name || '订阅').letter }}
             </text>
           </view>
-          <text class="hint">由名称首字自动生成，配色按名称固定</text>
+          <input v-model="form.name" class="input" placeholder="如：Netflix" maxlength="40" />
         </view>
+        <text class="hint">图标由名称首字自动生成</text>
       </view>
-
-      <view class="field">
-        <text class="label">分类</text>
-        <scroll-view scroll-x class="chip-scroll">
-          <view class="chip-row">
-            <view
-              v-for="c in categories"
-              :key="c.id"
-              class="chip"
-              :class="{ active: form.category_id === c.id }"
-              @click="form.category_id = c.id"
-            >
-              <view class="cat-dot" :style="{ background: c.color }" aria-hidden="true"></view>
-              <text>{{ c.name }}</text>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
-
-    <!-- 计费 -->
-    <view class="group">
-      <view class="group-title">计费</view>
 
       <view class="field">
         <text class="label">金额 <text class="req">*</text></text>
@@ -103,114 +81,147 @@
         <input v-model.number="form.cycle_days" type="number" class="input" placeholder="如 14" />
       </view>
 
-      <view class="field">
-        <text class="label">首次扣费日 <text class="req">*</text></text>
-        <picker mode="date" :value="form.start_date" @change="onStartDateChange">
-          <view class="input input-picker">{{ form.start_date }}</view>
-        </picker>
-      </view>
-
       <view v-if="!form.is_trial" class="field">
         <text class="label">下次扣费日</text>
         <picker mode="date" :value="form.next_billing_date" @change="onNextDateChange">
-          <view class="input input-picker">{{ form.next_billing_date || '默认 = 首次扣费日' }}</view>
+          <view class="input input-picker">{{ form.next_billing_date || '点击选择' }}</view>
         </picker>
-        <text class="hint">留空则随周期自动滚动</text>
+        <text class="hint">留空则按周期从今天起算</text>
       </view>
     </view>
 
-    <!-- 状态：试用 -->
-    <view class="group">
-      <view class="group-title">状态</view>
+    <!-- 更多选项 折叠开关 -->
+    <view
+      class="more-toggle"
+      role="button"
+      tabindex="0"
+      :aria-expanded="advancedOpen"
+      @click="advancedOpen = !advancedOpen"
+    >
+      <text class="more-text">{{ advancedOpen ? '收起' : '更多选项' }}</text>
+      <view class="chev" :class="{ 'is-open': advancedOpen }" aria-hidden="true"></view>
+    </view>
 
-      <view class="switch-field">
-        <text class="label">这是一个试用</text>
-        <switch :checked="form.is_trial" :color="BRAND_HEX" @change="onTrialSwitch" />
+    <view v-show="advancedOpen">
+      <!-- 分类 -->
+      <view class="group">
+        <view class="group-title">分类</view>
+        <scroll-view scroll-x class="chip-scroll">
+          <view class="chip-row">
+            <view
+              v-for="c in categories"
+              :key="c.id"
+              class="chip"
+              :class="{ active: form.category_id === c.id }"
+              @click="form.category_id = c.id"
+            >
+              <view class="cat-dot" :style="{ background: c.color }" aria-hidden="true"></view>
+              <text>{{ c.name }}</text>
+            </view>
+          </view>
+        </scroll-view>
       </view>
 
-      <view v-if="form.is_trial" class="trial-block">
+      <!-- 首次扣费日 -->
+      <view class="group">
         <view class="field">
-          <text class="label">试用结束日 <text class="req">*</text></text>
-          <picker mode="date" :value="form.trial_end_date" @change="onTrialEndChange">
-            <view class="input input-picker">{{ form.trial_end_date || '点击选择' }}</view>
+          <text class="label">首次扣费日</text>
+          <picker mode="date" :value="form.start_date" @change="onStartDateChange">
+            <view class="input input-picker">{{ form.start_date }}</view>
           </picker>
+          <text class="hint">用于计算累计已付；留空则与下次扣费日相同</text>
+        </view>
+      </view>
+
+      <!-- 试用 -->
+      <view class="group">
+        <view class="switch-field">
+          <text class="label">这是一个试用</text>
+          <switch :checked="form.is_trial" :color="BRAND_HEX" @change="onTrialSwitch" />
+        </view>
+
+        <view v-if="form.is_trial" class="trial-block">
+          <view class="field">
+            <text class="label">试用结束日 <text class="req">*</text></text>
+            <picker mode="date" :value="form.trial_end_date" @change="onTrialEndChange">
+              <view class="input input-picker">{{ form.trial_end_date || '点击选择' }}</view>
+            </picker>
+          </view>
+
+          <view class="field">
+            <text class="label">试用结束后</text>
+            <view class="chip-row">
+              <view
+                v-for="opt in trialEndOptions"
+                :key="opt.value || 'null'"
+                class="chip"
+                :class="{ active: form.trial_converts_to === opt.value }"
+                @click="form.trial_converts_to = opt.value"
+              >
+                {{ opt.label }}
+              </view>
+            </view>
+          </view>
+
+          <view class="trial-hint">
+            试用订阅不计入"自动续费"列表，到期前 N 天单独提醒你。
+          </view>
+        </view>
+      </view>
+
+      <!-- 续费 -->
+      <view v-if="!form.is_trial" class="group">
+        <view class="switch-field">
+          <text class="label">自动续费</text>
+          <switch :checked="form.auto_renew" :color="BRAND_HEX" @change="onAutoRenewSwitch" />
         </view>
 
         <view class="field">
-          <text class="label">试用结束后</text>
+          <text class="label">退订链接</text>
+          <input v-model="form.cancel_url" class="input" placeholder="https://.../cancel" />
+        </view>
+      </view>
+
+      <!-- 提醒 -->
+      <view class="group">
+        <view class="group-title">提醒</view>
+
+        <view class="field">
+          <text class="label">通道</text>
           <view class="chip-row">
             <view
-              v-for="opt in trialEndOptions"
-              :key="opt.value || 'null'"
+              v-for="ch in channelOptions"
+              :key="ch.value"
               class="chip"
-              :class="{ active: form.trial_converts_to === opt.value }"
-              @click="form.trial_converts_to = opt.value"
+              :class="{ active: form.notify_channels.includes(ch.value) }"
+              @click="toggleChannel(ch.value)"
             >
-              {{ opt.label }}
+              {{ ch.label }}
             </view>
           </view>
         </view>
 
-        <view class="trial-hint">
-          试用订阅不计入"自动续费"列表，到期前 N 天单独提醒你。
-        </view>
-      </view>
-    </view>
-
-    <!-- 续费 -->
-    <view v-if="!form.is_trial" class="group">
-      <view class="group-title">续费</view>
-
-      <view class="switch-field">
-        <text class="label">自动续费</text>
-        <switch :checked="form.auto_renew" :color="BRAND_HEX" @change="onAutoRenewSwitch" />
-      </view>
-
-      <view class="field">
-        <text class="label">退订链接</text>
-        <input v-model="form.cancel_url" class="input" placeholder="https://.../cancel" />
-      </view>
-    </view>
-
-    <!-- 提醒 -->
-    <view class="group">
-      <view class="group-title">提醒</view>
-
-      <view class="field">
-        <text class="label">通道</text>
-        <view class="chip-row">
-          <view
-            v-for="ch in channelOptions"
-            :key="ch.value"
-            class="chip"
-            :class="{ active: form.notify_channels.includes(ch.value) }"
-            @click="toggleChannel(ch.value)"
-          >
-            {{ ch.label }}
+        <view class="field">
+          <text class="label">提前几天</text>
+          <view class="chip-row">
+            <view
+              v-for="d in dayOptions"
+              :key="d"
+              class="chip"
+              :class="{ active: form.notify_days_before.includes(d) }"
+              @click="toggleDay(d)"
+            >
+              {{ d }} 天
+            </view>
           </view>
         </view>
       </view>
 
-      <view class="field">
-        <text class="label">提前几天</text>
-        <view class="chip-row">
-          <view
-            v-for="d in dayOptions"
-            :key="d"
-            class="chip"
-            :class="{ active: form.notify_days_before.includes(d) }"
-            @click="toggleDay(d)"
-          >
-            {{ d }} 天
-          </view>
-        </view>
+      <!-- 备注 -->
+      <view class="group">
+        <view class="group-title">备注</view>
+        <textarea v-model="form.notes" class="textarea" placeholder="订单号、备注……" maxlength="500" />
       </view>
-    </view>
-
-    <!-- 备注 -->
-    <view class="group">
-      <view class="group-title">备注</view>
-      <textarea v-model="form.notes" class="textarea" placeholder="订单号、备注……" maxlength="500" />
     </view>
 
     <!-- 币种选择 popup -->
@@ -445,6 +456,8 @@ function onCurrencyChange(e: any) {
 }
 
 const currencyPickerOpen = ref(false);
+/** 「更多选项」是否展开。默认收起——多数订阅只需填必填的 4 项。 */
+const advancedOpen = ref(false);
 
 function pickCurrency(c: Currency) {
   form.currency = c;
@@ -708,24 +721,53 @@ onLoad((opts: any) => {
   justify-content: center;
 }
 
-.tile-row {
+.name-row {
   display: flex;
   align-items: center;
   gap: 20rpx;
+  .input { flex: 1; }
 }
 .tile-preview {
-  width: 88rpx;
-  height: 88rpx;
-  flex: 0 0 88rpx;
+  width: 80rpx;
+  height: 80rpx;
+  flex: 0 0 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 18rpx;
 }
 .tile-preview-letter {
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: 600;
   line-height: 1;
+}
+
+/* 「更多选项」折叠开关 */
+.more-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  min-height: $recur-tap-min;
+  margin-bottom: $recur-gap-card;
+  background: $recur-card;
+  border-radius: $recur-radius-card;
+}
+.more-text {
+  font-size: $recur-fs-body;
+  color: $recur-text-2;
+}
+/* CSS 绘制的箭头，不用 Unicode 字形 */
+.chev {
+  width: 14rpx;
+  height: 14rpx;
+  border-right: 3rpx solid $recur-text-3;
+  border-bottom: 3rpx solid $recur-text-3;
+  transform: rotate(45deg) translate(-2rpx, -2rpx);
+  transition: transform 0.2s ease;
+}
+.chev.is-open {
+  transform: rotate(-135deg) translate(-2rpx, -2rpx);
 }
 
 .amount-row {
