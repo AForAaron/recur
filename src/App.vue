@@ -245,14 +245,14 @@ button::after { border: none; }
 }
 
 /* ============================================================
- * 桌面端：约束为手机宽度的居中列
+ * 桌面端
  *
- * uni-app H5 把 rpx 转 rem，视口 > rpxCalcMaxDeviceWidth（默认 960）
- * 时根字号冻结在 16px，字体与间距保持手机尺寸，而 width:100%/flex:1
- * 的容器会撑满桌面窗口 —— 布局被"拉稀"。
- *
- * 注意：tabBar 与各页面的 FAB / 弹层都是 position:fixed，
- * 相对视口定位，不随 uni-app 一起收窄，需各自单独约束。
+ * 把手机宽度应用居中放置在桌面上。重新思考桌面体验，而不是简单缩放：
+ *  - 用更大的阴影把列从背景上抬起来，替代几乎看不见的 1px 边框
+ *  - body 用稍深的灰做衬底，让白底列有清晰的边界
+ *  - tab bar 让 uni-app 默认处理：full-width 贴视口底部
+ *    （手机原生样式在桌面上的自然延伸——像 iOS app 在 Safari 里那样）
+ *  - FAB / 弹层交给各自页面的 #ifdef H5 块居中对齐到列
  * ============================================================ */
 /* #ifdef H5 */
 @media screen and (min-width: 768px) {
@@ -260,29 +260,27 @@ button::after { border: none; }
     --recur-app-w: 430px;
   }
 
+  body {
+    background-color: #E5E7EB;
+  }
+
   uni-app {
     max-width: var(--recur-app-w);
     margin: 0 auto;
     min-height: 100vh;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+    /* 阴影替代边框：往上抬一点，让列与底像分层 */
+    box-shadow:
+      0 0 0 1px rgba(17, 24, 39, 0.04),
+      0 12px 32px -8px rgba(17, 24, 39, 0.08),
+      0 24px 64px -16px rgba(17, 24, 39, 0.06);
+    border-radius: 0;
   }
 
-  body {
-    background-color: #e5e7eb;
-  }
-
-  /* 桌面端把 tab bar 限制到与白底列同宽（不超），居中显示。
-   * 用 transform: translateX(-50%) 居中——基于元素**实际渲染宽度**居中，
-   * 不用 calc()（width: auto 时 calc 减的 215px 是 max-width 的，
-   * 元素真实宽度通常只有 200px 左右，结果偏到 viewport 一侧）。
-   * transform 只放在内层 .uni-tabbar；不放外层 <uni-tabbar>，
-   * 否则会变成内层 fixed 后代的 containing block，把 bottom:0
-   * 从视口底部改成文档底部。 */
-  .uni-tabbar {
-    max-width: var(--recur-app-w);
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%);
+  /* Tab bar 走 uni-app 默认：full-width 贴视口底部。
+   * 内层 .uni-tabbar 已经有 backgroundColor（来自 tabBar 配置），
+   * 顶部加一条细微边线作为与内容的视觉分隔。 */
+  .uni-tabbar-border {
+    background-color: rgba(17, 24, 39, 0.08) !important;
   }
 }
 /* #endif */
