@@ -161,14 +161,15 @@ const mono = monogram;
 
 // ====== Tab ======
 /**
- * 四个 tab 是一次干净划分：自动续费 + 非自动续费 + 试用 = 全部。
- * 原先的「正式」是前两者之和，属于冗余，已去掉。
+ * 四个 tab 是一次划分：全部 = 自动续费 + 非自动续费 + 试用 + 已暂停。
+ * 原先的「正式」是自动+非自动之和，属于冗余，已去掉。
+ * 「全部」排除已取消——取消的只留在数据里，不再占列表。
  */
 type TabValue = "all" | "auto_renewing" | "non_renewing" | "trial";
 const activeTab = ref<TabValue>("all");
 
 const tabs = computed(() => [
-  { value: "all" as TabValue,           label: "全部",       count: store.subscriptions.filter(s => !s.archived_at).length },
+  { value: "all" as TabValue,           label: "全部",       count: store.listed.length },
   { value: "auto_renewing" as TabValue, label: "自动续费",   count: store.autoRenewing.length },
   { value: "non_renewing" as TabValue,  label: "非自动续费", count: store.nonRenewing.length },
   { value: "trial" as TabValue,         label: "试用",       count: store.trials.length },
@@ -180,7 +181,7 @@ const filteredList = computed(() => {
     case "auto_renewing": return store.autoRenewing;
     case "non_renewing":  return store.nonRenewing;
     case "trial":         return store.trials;
-    default:              return store.subscriptions.filter(s => !s.archived_at);
+    default:              return store.listed;
   }
 });
 

@@ -109,10 +109,24 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     )
   );
 
-  /** 试用中、未取消、未归档 */
+  /**
+   * 试用中的订阅。
+   *
+   * 与 autoRenewing / nonRenewing 用同一个 status 条件（active），
+   * 这样四个 tab 才构成严密划分：
+   *   全部 = 自动续费 + 非自动续费 + 试用 + 已暂停
+   * 若这里放宽到 "!== cancelled"，暂停中的试用会被重复计入。
+   */
   const trials = computed(() =>
     subscriptions.value.filter(
-      (s) => s.is_trial && s.status !== "cancelled" && !s.archived_at
+      (s) => s.is_trial && s.status === "active" && !s.archived_at
+    )
+  );
+
+  /** 「全部」的内容：未归档、且未取消。与三个筛选 tab 的并集一致。 */
+  const listed = computed(() =>
+    subscriptions.value.filter(
+      (s) => !s.archived_at && s.status !== "cancelled"
     )
   );
 
@@ -387,6 +401,7 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     trials,
     autoRenewing,
     nonRenewing,
+    listed,
     archived,
     totalDailyRMB,
     totalMonthlyRMB,
