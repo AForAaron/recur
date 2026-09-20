@@ -276,9 +276,23 @@ button::after { border: none; }
     border-radius: 0;
   }
 
-  /* Tab bar 走 uni-app 默认：full-width 贴视口底部。
-   * 内层 .uni-tabbar 已经有 backgroundColor（来自 tabBar 配置），
-   * 顶部加一条细微边线作为与内容的视觉分隔。 */
+  /* Tab bar：与白底列同宽（430px），居中到列位置。
+   * 用 transform: translateX(-50%) 居中（基于实际渲染宽度，
+   * 不依赖 max-width 是否被填满）。transform 只放在内层 .uni-tabbar，
+   * 不动外层 <uni-tabbar>——外层加 transform 会变成内层 fixed 定位
+   * 的新 containing block，把 bottom:0 从视口底部改成文档底部。
+   *
+   * width 显式设 430px（不是只设 max-width）——若 width: auto，
+   * shrink-to-fit 让元素远窄于 430px，文字看起来就太小、按钮就显得太空。 */
+  .uni-tabbar {
+    width: var(--recur-app-w) !important;
+    max-width: var(--recur-app-w) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+  }
+
+  /* Tab bar 顶部分隔线 */
   .uni-tabbar-border {
     background-color: rgba(17, 24, 39, 0.08) !important;
   }
