@@ -271,14 +271,18 @@ button::after { border: none; }
     background-color: #e5e7eb;
   }
 
-  /* 桌面端把 tab bar 限制到与白底列同宽，居中显示。
-   * 用 calc() 居中，不用 transform——transform 会让 .uni-tabbar
-   * 成为自身 fixed 定位的 containing block 候选，某些浏览器实现下
-   * 会改变 bottom:0 的参考基准。 */
+  /* 桌面端把 tab bar 限制到与白底列同宽（不超），居中显示。
+   * 用 transform: translateX(-50%) 居中——基于元素**实际渲染宽度**居中，
+   * 不用 calc()（width: auto 时 calc 减的 215px 是 max-width 的，
+   * 元素真实宽度通常只有 200px 左右，结果偏到 viewport 一侧）。
+   * transform 只放在内层 .uni-tabbar；不放外层 <uni-tabbar>，
+   * 否则会变成内层 fixed 后代的 containing block，把 bottom:0
+   * 从视口底部改成文档底部。 */
   .uni-tabbar {
     max-width: var(--recur-app-w);
-    left: calc(50% - var(--recur-app-w) / 2) !important;
+    left: 50% !important;
     right: auto !important;
+    transform: translateX(-50%);
   }
 }
 /* #endif */
