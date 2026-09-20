@@ -116,6 +116,23 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     )
   );
 
+  /**
+   * 正式订阅按「会不会自己扣钱」二分。
+   * 这两类互斥且穷尽（试用另计），合起来即原先的「正式」。
+   * 区分的意义：自动续费扣钱前要确认/取消，非自动续费到期前要做决定。
+   */
+  const autoRenewing = computed(() =>
+    subscriptions.value.filter(
+      (s) => s.auto_renew && !s.is_trial && s.status === "active" && !s.archived_at
+    )
+  );
+
+  const nonRenewing = computed(() =>
+    subscriptions.value.filter(
+      (s) => !s.auto_renew && !s.is_trial && s.status === "active" && !s.archived_at
+    )
+  );
+
   /** 已归档（含已取消） */
   const archived = computed(() => subscriptions.value.filter((s) => !!s.archived_at));
 
@@ -368,6 +385,8 @@ export const useSubscriptionsStore = defineStore("subscriptions", () => {
     // getters
     active,
     trials,
+    autoRenewing,
+    nonRenewing,
     archived,
     totalDailyRMB,
     totalMonthlyRMB,

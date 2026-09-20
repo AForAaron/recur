@@ -19,7 +19,7 @@
       <view class="summary-meta">
         <text class="summary-meta-item">日均 ¥{{ store.totalDailyRMB.toFixed(1) }}</text>
         <text class="summary-dot">·</text>
-        <text class="summary-meta-item">{{ store.active.length }} 项正式订阅</text>
+        <text class="summary-meta-item">{{ store.autoRenewing.length }} 项自动续费</text>
         <template v-if="store.trials.length">
           <text class="summary-dot">·</text>
           <text class="summary-meta-item">{{ store.trials.length }} 项试用中</text>
@@ -160,24 +160,27 @@ onShow(() => store.rollForwardAll());
 const mono = monogram;
 
 // ====== Tab ======
-type TabValue = "all" | "active" | "trial" | "non_renewing";
+/**
+ * 四个 tab 是一次干净划分：自动续费 + 非自动续费 + 试用 = 全部。
+ * 原先的「正式」是前两者之和，属于冗余，已去掉。
+ */
+type TabValue = "all" | "auto_renewing" | "non_renewing" | "trial";
 const activeTab = ref<TabValue>("all");
 
 const tabs = computed(() => [
   { value: "all" as TabValue,           label: "全部",       count: store.subscriptions.filter(s => !s.archived_at).length },
-  { value: "active" as TabValue,        label: "正式",       count: store.active.length },
+  { value: "auto_renewing" as TabValue, label: "自动续费",   count: store.autoRenewing.length },
+  { value: "non_renewing" as TabValue,  label: "非自动续费", count: store.nonRenewing.length },
   { value: "trial" as TabValue,         label: "试用",       count: store.trials.length },
-  { value: "non_renewing" as TabValue,  label: "非自动续费", count: store.subscriptions.filter(s => !s.archived_at && !s.auto_renew && !s.is_trial && s.status === 'active').length },
 ]);
 
 // ====== 筛选 ======
 const filteredList = computed(() => {
-  const list = store.subscriptions.filter(s => !s.archived_at);
   switch (activeTab.value) {
-    case "active":       return list.filter(s => !s.is_trial && s.status !== "cancelled");
-    case "trial":        return list.filter(s => s.is_trial && s.status !== "cancelled");
-    case "non_renewing": return list.filter(s => !s.auto_renew && !s.is_trial && s.status === "active");
-    default:             return list;
+    case "auto_renewing": return store.autoRenewing;
+    case "non_renewing":  return store.nonRenewing;
+    case "trial":         return store.trials;
+    default:              return store.subscriptions.filter(s => !s.archived_at);
   }
 });
 
@@ -280,9 +283,9 @@ const groupedList = computed(() => {
 });
 
 const emptyText = computed(() => {
-  if (activeTab.value === "active") return "还没有正式订阅";
-  if (activeTab.value === "trial") return "当前没有试用中的订阅";
+  if (activeTab.value === "auto_renewing") return "当前没有自动续费的订阅";
   if (activeTab.value === "non_renewing") return "当前没有非自动续费的订阅";
+  if (activeTab.value === "trial") return "当前没有试用中的订阅";
   return "点右下角 + 开始记录第一笔订阅";
 });
 
